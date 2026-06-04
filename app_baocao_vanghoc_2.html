@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Báo cáo Vắng Học SU26</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Be Vietnam Pro',sans-serif;background:#f1f5f9;color:#1e293b;font-size:13px;line-height:1.5}
+
+/* ── UPLOAD ── */
+#upload-screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:32px}
+.up-logo{font-size:52px}
+.up-title{font-size:22px;font-weight:800;text-align:center}
+.up-sub{font-size:13px;color:#64748b;text-align:center;max-width:420px}
+.drop-zone{width:420px;border:2.5px dashed #93c5fd;border-radius:16px;padding:40px 28px;text-align:center;cursor:pointer;background:#eff6ff;transition:all .2s}
+.drop-zone:hover,.drop-zone.over{background:#dbeafe;border-color:#1d4ed8}
+.dz-icon{font-size:36px;margin-bottom:10px}
+.dz-main{font-size:15px;font-weight:700;color:#1d4ed8;margin-bottom:4px}
+.dz-sub{font-size:12px;color:#94a3b8}
+#file-input{display:none}
+.up-note{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px 18px;max-width:420px;font-size:12px;color:#64748b;line-height:1.9}
+.up-note strong{color:#1e293b}
+.err-msg{background:#fef2f2;border:1px solid #fca5a5;color:#dc2626;border-radius:10px;padding:10px 18px;font-size:12.5px;font-weight:600;max-width:420px;text-align:center;display:none}
+
+/* ── HEADER ── */
+#report{display:none}
+.header{background:linear-gradient(135deg,#1e3a8a,#1d4ed8 60%,#2563eb);color:#fff;padding:20px 28px 0}
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:14px;flex-wrap:wrap;gap:10px}
+.hl{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;opacity:.65;margin-bottom:4px}
+.header h1{font-size:19px;font-weight:800}
+.header h1 em{font-style:normal;opacity:.6;font-weight:400;font-size:14px}
+.hright{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.hdate{background:rgba(255,255,255,.12);border-radius:8px;padding:7px 13px;text-align:right;font-size:11px;opacity:.8}
+.hdate strong{display:block;font-size:14px;font-weight:800;opacity:1}
+.hbtns{display:flex;gap:7px}
+.hbtn{font-family:inherit;font-size:11.5px;font-weight:700;border:none;border-radius:7px;padding:6px 13px;cursor:pointer;transition:all .15s}
+.hbtn.reset{background:rgba(255,255,255,.15);color:#fff}
+.hbtn.reset:hover{background:rgba(255,255,255,.25)}
+.hbtn.print{background:#fff;color:#1d4ed8}
+.hbtn.print:hover{background:#eff6ff}
+
+/* ── WEEK TABS ── */
+.week-bar{display:flex;gap:3px;padding:0 4px;margin-top:4px;overflow-x:auto;flex-wrap:nowrap}
+.wtab{white-space:nowrap;padding:8px 16px;border-radius:8px 8px 0 0;font-size:12px;font-weight:700;cursor:pointer;border:none;font-family:inherit;transition:all .2s;color:rgba(255,255,255,.6);background:rgba(255,255,255,.08);flex-shrink:0}
+.wtab.active{background:#fff;color:#1d4ed8}
+.wtab:hover:not(.active){background:rgba(255,255,255,.15);color:#fff}
+
+/* ── BODY ── */
+.body{max-width:1100px;margin:0 auto;padding:18px 14px 40px}
+.week-panel{display:none}
+.week-panel.active{display:block}
+
+/* ── WEEK STRIP ── */
+.week-strip{background:#fff;border-radius:10px;border:1px solid #e2e8f0;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.ws-label{font-size:13px;font-weight:800;color:#1d4ed8}
+.ws-date{font-size:12px;color:#64748b}
+.ws-sep{color:#cbd5e1}
+.cpill{display:flex;align-items:center;gap:7px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:7px;padding:5px 11px;font-size:11.5px;flex-wrap:wrap;gap:6px}
+.dup{color:#dc2626;font-weight:700}
+.ddown{color:#16a34a;font-weight:700}
+.deq{color:#64748b;font-weight:600}
+
+/* ── KPIs ── */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.kpi{background:#fff;border-radius:10px;padding:13px 15px;border:1px solid #e2e8f0;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.kpi.blue::before{background:#1d4ed8}.kpi.red::before{background:#dc2626}
+.kpi.amber::before{background:#d97706}.kpi.purple::before{background:#7c3aed}
+.kpi-icon{font-size:17px;margin-bottom:3px}
+.kpi-val{font-size:26px;font-weight:800;line-height:1;margin-bottom:2px}
+.kpi.blue .kpi-val{color:#1d4ed8}.kpi.red .kpi-val{color:#dc2626}
+.kpi.amber .kpi-val{color:#d97706}.kpi.purple .kpi-val{color:#7c3aed}
+.kpi-lbl{font-size:11px;color:#64748b;font-weight:500}
+.kdelta{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:99px;display:inline-block;margin-top:5px}
+.kdelta.up{background:#fef2f2;color:#dc2626}
+.kdelta.dn{background:#f0fdf4;color:#16a34a}
+.kdelta.eq{background:#f8fafc;color:#64748b}
+
+/* ── SECTION ── */
+.stitle{font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;margin:16px 0 9px;display:flex;align-items:center;gap:8px}
+.stitle::after{content:'';flex:1;height:1px;background:#e2e8f0}
+
+/* ── GRID ── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:11px}
+.card{background:#fff;border-radius:10px;border:1px solid #e2e8f0;padding:13px 15px}
+.ctitle{font-size:12.5px;font-weight:700;margin-bottom:11px}
+
+/* ── BARS ── */
+.bar-row{margin-bottom:7px}
+.bar-meta{display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:3px}
+.bar-name{font-weight:500;color:#334155}
+.bar-track{height:7px;background:#f1f5f9;border-radius:99px;overflow:hidden}
+.bar-fill{height:100%;border-radius:99px;transition:width .6s}
+.bar-dbl{display:flex;flex-direction:column;gap:2px}
+.bar-dbl .bt{height:5px;background:#f1f5f9;border-radius:99px;overflow:hidden}
+.bar-legend{font-size:10px;color:#94a3b8;margin-top:5px}
+
+/* ── WARN ── */
+.warn-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.wbox{border-radius:8px;padding:9px 11px;display:flex;align-items:center;gap:9px;border:1px solid}
+.wdot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.wval{font-size:19px;font-weight:800;line-height:1}
+.wlbl{font-size:10.5px;color:#64748b}
+.wdelta{font-size:10px;font-weight:700;margin-top:2px}
+
+/* ── TABLE ── */
+.twrap{background:#fff;border-radius:10px;border:1px solid #e2e8f0;overflow:hidden;margin-bottom:11px}
+.thd{padding:10px 14px;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center}
+.thd h3{font-size:12.5px;font-weight:700}
+.badge{font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:99px}
+.badge.blue{background:#eff6ff;color:#1d4ed8}.badge.red{background:#fef2f2;color:#dc2626}
+.badge.amber{background:#fffbeb;color:#d97706}.badge.green{background:#f0fdf4;color:#16a34a}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead{background:#f8fafc}
+th{padding:7px 11px;text-align:left;font-size:10.5px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.3px;border-bottom:1px solid #f1f5f9;white-space:nowrap}
+th.r,td.r{text-align:right}
+td{padding:8px 11px;border-bottom:1px solid #f8fafc;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr.tot td{background:#f0f4ff;font-weight:700}
+tr:hover:not(.tot) td{background:#fafbff}
+.trend{display:inline-flex;align-items:center;font-size:10.5px;font-weight:700;padding:1px 6px;border-radius:4px}
+.trend.up{background:#fef2f2;color:#dc2626}
+.trend.dn{background:#f0fdf4;color:#16a34a}
+.trend.eq{background:#f8fafc;color:#94a3b8}
+.ctag{display:inline-block;font-size:10px;font-weight:700;padding:1px 7px;border-radius:4px}
+.ctag.cam{background:#fdf4ff;color:#7c3aed}
+.ctag.nguy{background:#fffbeb;color:#d97706}
+
+/* ── KP REASON BAR ── */
+.rstrip{display:flex;height:18px;border-radius:6px;overflow:hidden;gap:2px;margin-bottom:9px}
+.rs{display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff}
+
+/* ── NHẬN XÉT ── */
+.nxet{background:#fff;border-radius:10px;border:1px solid #e2e8f0;padding:14px 16px;margin-bottom:11px}
+.nxtitle{font-size:12.5px;font-weight:700;margin-bottom:11px}
+.nxgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.nxb{border-radius:8px;padding:11px 13px}
+.nxb.alert{background:#fef2f2;border:1px solid #fca5a5}
+.nxb.good{background:#f0fdf4;border:1px solid #86efac}
+.nxb.warn{background:#fffbeb;border:1px solid #fcd34d}
+.nxb.plan{background:#eff6ff;border:1px solid #bfdbfe}
+.nxb h4{font-size:11.5px;font-weight:700;margin-bottom:6px}
+.nxb.alert h4{color:#dc2626}.nxb.good h4{color:#16a34a}
+.nxb.warn h4{color:#d97706}.nxb.plan h4{color:#1d4ed8}
+.nxlist{list-style:none;display:flex;flex-direction:column;gap:4px}
+.nxlist li{font-size:11.5px;color:#374151;display:flex;gap:6px;line-height:1.5}
+.nxlist li::before{content:'•';flex-shrink:0}
+
+/* ── TREND TAB ── */
+.trend-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-bottom:11px}
+.tcard{background:#fff;border-radius:10px;border:1px solid #e2e8f0;padding:13px 15px}
+.tcard h3{font-size:12px;font-weight:700;margin-bottom:10px}
+.sparkline{display:flex;align-items:flex-end;gap:6px;height:60px;margin-bottom:6px}
+.spark-bar{border-radius:4px 4px 0 0;min-width:28px;display:flex;align-items:flex-start;justify-content:center;padding-top:4px;color:#fff;font-weight:800;font-size:10px;flex:1;transition:height .5s}
+.spark-label{font-size:10px;color:#94a3b8;margin-top:3px;text-align:center}
+.spark-week{display:flex;gap:6px}
+.spark-week span{flex:1;text-align:center;font-size:10px;color:#64748b;font-weight:600}
+
+.footer{text-align:center;font-size:11px;color:#94a3b8;padding-top:18px;border-top:1px solid #e2e8f0;margin-top:6px}
+
+/* ── KP TABLE: scroll ngang + cố định cột Bộ môn ── */
+.kp-scroll-wrap{position:relative}
+.kp-table{border-collapse:separate;border-spacing:0;min-width:max-content;width:100%}
+.kp-sticky-col{position:sticky;left:0;z-index:2;background:#fff;white-space:nowrap;min-width:90px;border-right:1px solid #e2e8f0}
+thead .kp-sticky-col{background:#f8fafc;z-index:3}
+tr.tot .kp-sticky-col{background:#f0f4ff}
+tr:hover:not(.tot) .kp-sticky-col{background:#fafbff}
+/* shadow khi scroll để thấy cột cố định */
+.kp-scroll-wrap::after{content:'';position:absolute;top:0;left:90px;bottom:0;width:12px;background:linear-gradient(to right,rgba(0,0,0,.06),transparent);pointer-events:none;opacity:0;transition:opacity .2s}
+.kp-scroll-wrap.scrolled::after{opacity:1}
+
+@media(max-width:720px){
+  .kpis,.g2,.nxgrid{grid-template-columns:1fr 1fr}
+  .trend-grid{grid-template-columns:1fr}
+  .drop-zone{width:100%}
+}
+@media print{
+  #upload-screen{display:none!important}
+  #report{display:block!important}
+  .hbtn{display:none}
+  .header{background:#1d4ed8!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .card,.twrap,.nxet{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+
+<!-- ══ UPLOAD ══ -->
+<div id="upload-screen">
+  <div class="up-logo">📊</div>
+  <div class="up-title">Báo cáo Vắng Học SU26</div>
+  <div class="up-sub">Kéo thả file Excel vào đây — báo cáo tự động tạo ra với đầy đủ so sánh tuần & nhận xét</div>
+  <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+    <div class="dz-icon">📂</div>
+    <div class="dz-main">Kéo thả file Excel vào đây</div>
+    <div class="dz-sub">hoặc click để chọn · .xlsx</div>
+    <input type="file" id="file-input" accept=".xlsx,.xls">
+  </div>
+  <div class="err-msg" id="err-msg"></div>
+  <div class="up-note">
+    <strong>Yêu cầu file:</strong> Dùng đúng file <em>template_vanghoc_SU26.xlsx</em><br>
+    Mỗi tuần duplicate sheet <strong>TUẦN MẪU</strong> → đặt tên <strong>Tuần 3, Tuần 4...</strong> → điền ô vàng<br>
+    App tự đọc tất cả sheet "Tuần X" và so sánh tuần liền kề
+  </div>
+</div>
+
+<!-- ══ REPORT ══ -->
+<div id="report">
+  <div class="header">
+    <div class="header-top">
+      <div>
+        <div class="hl">Báo cáo tuần · TaskForce DVSV · Summer 2026</div>
+        <h1>Theo dõi Vắng Học <em>& Cảnh báo Cấm thi</em></h1>
+      </div>
+      <div class="hright">
+        <div class="hdate">Cập nhật<strong id="rdate">—</strong><span id="rfile" style="font-size:10px;opacity:.7"></span></div>
+        <div class="hbtns">
+          <button class="hbtn reset" onclick="resetApp()">↩ Tải file mới</button>
+          <button class="hbtn print" onclick="window.print()">🖨 In báo cáo</button>
+        </div>
+      </div>
+    </div>
+    <div class="week-bar" id="week-bar"></div>
+  </div>
+  <div class="body" id="report-body"></div>
+</div>
+
+<script>
+// ── DRAG & DROP ──
+var dz=document.getElementById('drop-zone'), fi=document.getElementById('file-input');
+dz.addEventListener('dragover',function(e){e.preventDefault();dz.classList.add('over')});
+dz.addEventListener('dragleave',function(){dz.classList.remove('over')});
+dz.addEventListener('drop',function(e){e.preventDefault();dz.classList.remove('over');if(e.dataTransfer.files[0])processFile(e.dataTransfer.files[0])});
+fi.addEventListener('change',function(e){if(e.target.files[0])processFile(e.target.files[0])});
+
+function resetApp(){
+  document.getElementById('report').style.display='none';
+  document.getElementById('upload-screen').style.display='flex';
+  fi.value='';
+}
+function showErr(m){var el=document.getElementById('err-msg');el.textContent=m;el.style.display='block'}
+
+// ── SHORT NAMES ──
+var BM_SHORT={
+  'CO-BAN':'Cơ bản','CO-KHI':'Cơ khí','CONG-NGHE-THONG-TIN':'CNTT',
+  'DIEN':'Điện','DLKSNH':'DLKSNH','KINH-TE':'Kinh tế',
+  'TIENG-ANH':'Tiếng Anh','TIENG-HAN':'Tiếng Hàn',
+  'THIET-KE-DO-HOA':'TK Đồ họa','THUONG-MAI-DIEN-TU':'TM Điện tử',
+  'UNG-DUNG-PHAN-MEM':'Ứng dụng PM','CO-DIEN':'Cơ điện'
+};
+function sn(b){return BM_SHORT[b]||b}
+function fmtN(n){return Math.round(n).toLocaleString('vi-VN')}
+function fmtP(n){return (Math.round(n*1000)/10).toFixed(1)+'%'}
+function num(v){var n=parseFloat(v);return isNaN(n)?0:n}
+
+// ── PARSE SHEET ──
+function parseSheet(ws){
+  var rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+  if(!rows.length) return null;
+
+  // Date range từ title dòng 0
+  var title=String(rows[0][0]||rows[0][8]||'');
+  var m=title.match(/Từ\s+(.+?)\s+đến\s+(.+?)(\s|$)/);
+  var dateRange=m?(m[1].trim()+' – '+m[2].trim()):'?';
+
+  // Bảng 1: col A-F, row 2=header, row 3..13=data (index 2..12)
+  var vh=[];
+  for(var i=2;i<2+11;i++){
+    var r=rows[i]||[];
+    var bm=String(r[0]||'').trim();
+    if(!bm||bm==='Tổng cộng') continue;
+    var comat=num(r[1]),vang=num(r[2]),tong=comat+vang;
+    vh.push({bm:bm,comat:comat,vang:vang,tong:tong,
+             tlvang:tong>0?vang/tong:0});
+  }
+
+  // Bảng 2: col H-M (index 7-12), same rows
+  var cb=[];
+  for(var i=2;i<2+11;i++){
+    var r=rows[i]||[];
+    var bm=String(r[7]||'').trim();
+    if(!bm||bm==='Tổng cộng'||bm==='Bộ môn') continue;
+    cb.push({bm:bm,con2:num(r[8]),con1:num(r[9]),nguycam:num(r[10]),camthi:num(r[11])});
+  }
+
+  // Bảng 3: col H onwards, tìm từ row có title "KHÔI PHỤC"
+  // Số cột lý do ĐỘNG — đọc từ dòng header "Bộ môn | lý do 1 | lý do 2 | ... | Tổng cộng"
+  var kp=[],kpHeaders=[],kpMode=false,kpHeaderRead=false,kpStartCol=7;
+  for(var i=0;i<rows.length;i++){
+    var r=rows[i]||[];
+    var c8=String(r[7]||'').trim();
+    // Tìm dòng title KHÔI PHỤC
+    if(!kpMode&&(c8.includes('KHÔI PHỤC')||c8.includes('KHOI PHUC'))){kpMode=true;continue}
+    if(kpMode&&!kpHeaderRead){
+      // Dòng header: bắt đầu bằng "Bộ môn"
+      if(c8==='Bộ môn'||c8.toLowerCase()==='bộ môn'){
+        // Đọc tất cả cột lý do (từ col 8 trở đi, dừng trước cột "Tổng cộng" hoặc hết)
+        kpHeaders=[];
+        for(var ci=8;ci<r.length;ci++){
+          var hdr=String(r[ci]||'').trim();
+          if(!hdr||hdr.toLowerCase().includes('tổng')||hdr.toLowerCase().includes('tong')) break;
+          kpHeaders.push(hdr);
+        }
+        kpHeaderRead=true;
+        continue;
+      }
+    }
+    if(kpMode&&kpHeaderRead){
+      if(c8&&!c8.includes('Grand')&&!c8.includes('THỐNG')&&!c8.includes('Tổng')){
+        var entry={bm:c8,vals:{}};
+        kpHeaders.forEach(function(h,hi){entry.vals[h]=num(r[8+hi]);});
+        kp.push(entry);
+      }
+      if(c8.includes('Grand')||c8.includes('Tổng')) break;
+    }
+  }
+
+  return{dateRange:dateRange,vh:vh,cb:cb,kp:kp,kpHeaders:kpHeaders};
+}
+
+// ── PROCESS FILE ──
+function processFile(file){
+  document.getElementById('err-msg').style.display='none';
+  var reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      var wb=XLSX.read(e.target.result,{type:'array'});
+      // Lọc sheet "Tuần X"
+      var weeks=[];
+      wb.SheetNames.forEach(function(name){
+        var m=name.match(/^Tuần\s+(\d+)$/i);
+        if(m){
+          var data=parseSheet(wb.Sheets[name]);
+          if(data&&data.vh.length>0) weeks.push({n:parseInt(m[1]),name:name,data:data});
+        }
+      });
+      if(!weeks.length){showErr('Không tìm thấy sheet "Tuần X" nào có dữ liệu. Kiểm tra lại file!');return}
+      weeks.sort(function(a,b){return a.n-b.n});
+
+      // Set header info
+      var now=new Date();
+      document.getElementById('rdate').textContent=now.toLocaleDateString('vi-VN');
+      document.getElementById('rfile').textContent=file.name;
+
+      buildReport(weeks);
+      document.getElementById('upload-screen').style.display='none';
+      document.getElementById('report').style.display='block';
+      window.scrollTo(0,0);
+      // Kích hoạt shadow cột cố định khi scroll ngang
+      setTimeout(function(){
+        document.querySelectorAll('.kp-scroll-wrap').forEach(function(el){
+          el.addEventListener('scroll',function(){
+            el.classList.toggle('scrolled', el.scrollLeft > 4);
+          });
+        });
+      }, 100);
+    }catch(err){showErr('Lỗi đọc file: '+err.message)}
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+var COLORS=['#3b82f6','#f97316','#f59e0b','#22c55e','#14b8a6','#8b5cf6','#ec4899','#ef4444','#06b6d4','#84cc16','#a78bfa'];
+
+// ── BUILD REPORT ──
+function buildReport(weeks){
+  var bar=document.getElementById('week-bar');
+  var body=document.getElementById('report-body');
+  bar.innerHTML=''; body.innerHTML='';
+
+  var latest=weeks[weeks.length-1];
+  var prev=weeks.length>1?weeks[weeks.length-2]:null;
+
+  // Tabs: mới nhất, các tuần cũ, xu hướng
+  var tabsHTML='';
+  // Tab mới nhất
+  tabsHTML+='<button class="wtab active" onclick="showPanel(\'w'+latest.n+'\',this)">'+latest.name+' ← Mới nhất</button>';
+  // Các tuần còn lại (đảo ngược, bỏ latest)
+  for(var i=weeks.length-2;i>=0;i--){
+    tabsHTML+='<button class="wtab" onclick="showPanel(\'w'+weeks[i].n+'\',this)">'+weeks[i].name+'</button>';
+  }
+  // Tab xu hướng nếu có >= 2 tuần
+  if(weeks.length>=2){
+    tabsHTML+='<button class="wtab" onclick="showPanel(\'trend\',this)">📈 Xu hướng</button>';
+  }
+  bar.innerHTML=tabsHTML;
+
+  // Panels
+  var html='';
+
+  // Panel mới nhất
+  html+=buildWeekPanel(latest,prev,'w'+latest.n,true);
+  // Panels các tuần cũ
+  for(var i=weeks.length-2;i>=0;i--){
+    var prevW=i>0?weeks[i-1]:null;
+    html+=buildWeekPanel(weeks[i],prevW,'w'+weeks[i].n,false);
+  }
+  // Panel xu hướng
+  if(weeks.length>=2) html+=buildTrendPanel(weeks);
+
+  // Footer
+  html+='<div class="footer">Báo cáo DVSV · SU26 · '+new Date().toLocaleDateString('vi-VN')+'</div>';
+
+  body.innerHTML=html;
+}
+
+function showPanel(id,btn){
+  document.querySelectorAll('.week-panel').forEach(function(p){p.classList.remove('active')});
+  document.querySelectorAll('.wtab').forEach(function(b){b.classList.remove('active')});
+  var el=document.getElementById('panel-'+id);
+  if(el) el.classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── BUILD 1 WEEK PANEL ──
+function buildWeekPanel(wk,prev,id,isActive){
+  var d=wk.data, pd=prev?prev.data:null;
+
+  var totalVang=d.vh.reduce(function(s,r){return s+r.vang},0);
+  var totalTong=d.vh.reduce(function(s,r){return s+r.tong},0);
+  var totalComat=d.vh.reduce(function(s,r){return s+r.comat},0);
+  var tlVangTB=totalTong>0?totalVang/totalTong:0;
+  var totalCamThi=d.cb.reduce(function(s,r){return s+r.camthi},0);
+  var totalNguyCam=d.cb.reduce(function(s,r){return s+r.nguycam},0);
+  var totalCon1=d.cb.reduce(function(s,r){return s+r.con1},0);
+  var totalCon2=d.cb.reduce(function(s,r){return s+r.con2},0);
+  var totalKP=d.kp.reduce(function(s,r){return s+d.kpHeaders.reduce(function(sv,h){return sv+r.vals[h]},0)},0);
+
+  var pTotalVang=pd?pd.vh.reduce(function(s,r){return s+r.vang},0):null;
+  var pTotalTong=pd?pd.vh.reduce(function(s,r){return s+r.tong},0):null;
+  var pTlVang=pd&&pTotalTong?pTotalVang/pTotalTong:null;
+  var pCamThi=pd?pd.cb.reduce(function(s,r){return s+r.camthi},0):null;
+
+  var html='<div id="panel-'+id+'" class="week-panel'+(isActive?' active':'')+'">';
+
+  // ── Week strip ──
+  html+='<div class="week-strip"><span class="ws-label">'+wk.name+'</span>';
+  html+='<span class="ws-date">'+d.dateRange+'</span>';
+  if(prev){
+    var dVang=totalVang-(pTotalVang||0);
+    var dCT=totalCamThi-(pCamThi||0);
+    html+='<span class="ws-sep">|</span>';
+    html+='<div class="cpill">';
+    html+='<span style="color:#64748b">So '+prev.name+':</span>';
+    html+='Vắng <strong>'+fmtN(pTotalVang)+'→'+fmtN(totalVang)+'</strong>';
+    html+='<span class="'+(dVang>0?'dup':'ddown')+'">'+(dVang>0?'↑+':'↓')+fmtN(Math.abs(dVang))+'</span>';
+    html+='<span class="ws-sep">·</span>';
+    html+='Cấm thi <strong>'+fmtN(pCamThi)+'→'+fmtN(totalCamThi)+'</strong>';
+    html+='<span class="'+(dCT>0?'dup':'ddown')+'">'+(dCT>0?'↑+':'↓')+fmtN(Math.abs(dCT))+'</span>';
+    html+='</div>';
+  }
+  html+='</div>';
+
+  // ── KPIs ──
+  function kdelta(cur,prv,reverse){
+    if(prv===null) return '<span class="kdelta eq">— tuần đầu</span>';
+    var d=cur-prv, pct=prv?Math.round(Math.abs(d)/prv*100):0;
+    var isUp=d>0;
+    var cls=(isUp&&!reverse)||(!isUp&&reverse)?'dn':'up';
+    return '<span class="kdelta '+cls+'">'+(isUp?'↑+':'↓')+fmtN(Math.abs(d))+' ('+pct+'%)</span>';
+  }
+  html+='<div class="kpis">';
+  html+='<div class="kpi blue"><div class="kpi-icon">👥</div><div class="kpi-val">'+fmtN(totalTong)+'</div><div class="kpi-lbl">Tổng lượt học</div>'+kdelta(totalTong,pTotalTong,true)+'</div>';
+  html+='<div class="kpi red"><div class="kpi-icon">🚫</div><div class="kpi-val">'+fmtN(totalVang)+'</div><div class="kpi-lbl">Lượt vắng · '+fmtP(tlVangTB)+'</div>'+kdelta(totalVang,pTotalVang,true)+'</div>';
+  html+='<div class="kpi amber"><div class="kpi-icon">⚠️</div><div class="kpi-val">'+fmtN(totalCamThi)+'</div><div class="kpi-lbl">SV cấm thi</div>'+kdelta(totalCamThi,pCamThi,true)+'</div>';
+  html+='<div class="kpi purple"><div class="kpi-icon">🔄</div><div class="kpi-val">'+(totalKP||'—')+'</div><div class="kpi-lbl">Khôi phục điểm danh</div></div>';
+  html+='</div>';
+
+  // ── BẢNG 1: Tỷ lệ vắng ──
+  html+='<div class="stitle">Bảng 1 · Tỷ lệ vắng học theo bộ môn</div>';
+  html+='<div class="g2">';
+
+  // Chart
+  var maxTl=Math.max.apply(null,d.vh.map(function(r){return r.tlvang}));
+  if(prev){
+    var pMap={};
+    pd.vh.forEach(function(r){pMap[r.bm]=r.tlvang});
+    maxTl=Math.max(maxTl,Math.max.apply(null,pd.vh.map(function(r){return r.tlvang})));
+  }
+  html+='<div class="card"><div class="ctitle">📊 Tỷ lệ vắng học'+(prev?' — so sánh 2 tuần':'')+'</div>';
+  d.vh.slice().sort(function(a,b){return b.tlvang-a.tlvang}).forEach(function(r,i){
+    var ptl=prev&&pMap?pMap[r.bm]:null;
+    var isWorse=ptl!==null&&r.tlvang>ptl;
+    var diff=ptl!==null?fmtP(Math.abs(r.tlvang-ptl)):null;
+    html+='<div class="bar-row"><div class="bar-meta"><span class="bar-name">'+sn(r.bm)+'</span>';
+    html+='<span style="font-weight:700;color:'+(isWorse?'#dc2626':'#334155')+'">'+fmtP(r.tlvang);
+    if(diff) html+=' <span style="font-size:10px;color:'+(isWorse?'#dc2626':'#16a34a')+'">'+(isWorse?'↑+':'↓')+diff+'</span>';
+    html+='</span></div>';
+    if(prev&&ptl!==null){
+      html+='<div class="bar-dbl"><div class="bt"><div class="bar-fill" style="width:'+Math.round(ptl/maxTl*100)+'%;background:#93c5fd;opacity:.7"></div></div>';
+      html+='<div class="bt"><div class="bar-fill" style="width:'+Math.round(r.tlvang/maxTl*100)+'%;background:'+COLORS[i%COLORS.length]+'"></div></div></div>';
+    } else {
+      html+='<div class="bar-track"><div class="bar-fill" style="width:'+Math.round(r.tlvang/maxTl*100)+'%;background:'+COLORS[i%COLORS.length]+'"></div></div>';
+    }
+    html+='</div>';
+  });
+  if(prev) html+='<div class="bar-legend">🔵 '+prev.name+' &nbsp; 🟦 '+wk.name+'</div>';
+  html+='</div>';
+
+  // Bảng chi tiết vắng
+  html+='<div class="twrap" style="border:none;margin:0;overflow-y:auto;max-height:420px"><table><thead><tr>';
+  html+='<th>Bộ môn</th><th class="r">Có mặt</th><th class="r">Vắng</th><th class="r">TL Vắng</th>';
+  if(prev) html+='<th class="r">So '+prev.name+'</th>';
+  html+='</tr></thead><tbody>';
+  d.vh.forEach(function(r){
+    var ptl=prev&&pMap?pMap[r.bm]:null;
+    var diff=ptl!==null?(r.tlvang-ptl):null;
+    html+='<tr><td>'+sn(r.bm)+'</td><td class="r">'+fmtN(r.comat)+'</td><td class="r">'+fmtN(r.vang)+'</td>';
+    html+='<td class="r"><strong style="color:'+(r.tlvang>0.18?'#dc2626':r.tlvang>0.15?'#d97706':'#334155')+'">'+fmtP(r.tlvang)+'</strong></td>';
+    if(prev) html+='<td class="r">'+(diff!==null?'<span class="trend '+(diff>0.001?'up':diff<-0.001?'dn':'eq')+'">'+(diff>0?'↑':'↓')+fmtP(Math.abs(diff))+'</span>':'—')+'</td>';
+    html+='</tr>';
+  });
+  html+='<tr class="tot"><td>Tổng cộng</td><td class="r">'+fmtN(totalComat)+'</td><td class="r">'+fmtN(totalVang)+'</td><td class="r">'+fmtP(tlVangTB)+'</td>';
+  if(prev){var pdiff=pTlVang!==null?(tlVangTB-pTlVang):null;html+='<td class="r">'+(pdiff!==null?'<span class="trend '+(pdiff>0.001?'up':pdiff<-0.001?'dn':'eq')+'">'+(pdiff>0?'↑':'↓')+fmtP(Math.abs(pdiff))+'</span>':'—')+'</td>';}
+  html+='</tr></tbody></table></div>';
+  html+='</div>'; // end g2
+
+  // ── BẢNG 2: Cảnh báo ──
+  html+='<div class="stitle">Bảng 2 · Cảnh báo cấm thi</div>';
+  html+='<div class="g2">';
+
+  // Warn boxes
+  var pcb=pd?{con2:pd.cb.reduce(function(s,r){return s+r.con2},0),con1:pd.cb.reduce(function(s,r){return s+r.con1},0),nguycam:pd.cb.reduce(function(s,r){return s+r.nguycam},0),camthi:pd.cb.reduce(function(s,r){return s+r.camthi},0)}:null;
+  html+='<div class="card">';
+  html+='<div class="ctitle">🚨 Tổng hợp 4 mức cảnh báo</div>';
+  html+='<div class="warn-grid">';
+  function wbox(val,pval,lbl,bg,bc,dc){
+    var dv=pval!==null?val-pval:null;
+    return '<div class="wbox" style="background:'+bg+';border-color:'+bc+'"><div class="wdot" style="background:'+dc+'"></div>'
+      +'<div><div class="wval" style="color:'+dc+'">'+fmtN(val)+'</div><div class="wlbl">'+lbl+'</div>'
+      +(dv!==null?'<div class="wdelta" style="color:'+(dv>0?'#dc2626':'#16a34a')+'">'+(dv>0?'↑+':'↓')+fmtN(Math.abs(dv))+' so trước</div>':'')
+      +'</div></div>';
+  }
+  html+=wbox(totalCon2,pcb?pcb.con2:null,'Còn 2 buổi nghỉ','#fffbeb','#fcd34d','#d97706');
+  html+=wbox(totalCon1,pcb?pcb.con1:null,'Còn 1 buổi nghỉ','#fff7ed','#fdba74','#ea580c');
+  html+=wbox(totalNguyCam,pcb?pcb.nguycam:null,'Nguy cơ cấm thi','#fef2f2','#fca5a5','#dc2626');
+  html+=wbox(totalCamThi,pcb?pcb.camthi:null,'Đã bị cấm thi','#fdf4ff','#c4b5fd','#7c3aed');
+  html+='</div>';
+
+  // mini chart cấm thi
+  var cbSorted=d.cb.slice().sort(function(a,b){return b.camthi-a.camthi}).filter(function(r){return r.camthi>0});
+  if(cbSorted.length){
+    var maxCT=cbSorted[0].camthi;
+    html+='<div style="margin-top:12px;padding-top:10px;border-top:1px solid #f1f5f9"><div style="font-size:11px;font-weight:600;color:#64748b;margin-bottom:6px">Cấm thi theo BM</div>';
+    cbSorted.forEach(function(r,i){
+      html+='<div class="bar-row"><div class="bar-meta"><span class="bar-name">'+sn(r.bm)+'</span><span style="color:'+COLORS[i%COLORS.length]+';font-weight:700">'+r.camthi+'</span></div>'
+        +'<div class="bar-track"><div class="bar-fill" style="width:'+Math.round(r.camthi/maxCT*100)+'%;background:'+COLORS[i%COLORS.length]+'"></div></div></div>';
+    });
+    html+='</div>';
+  }
+  html+='</div>'; // card
+
+  // Bảng cảnh báo chi tiết
+  html+='<div class="twrap" style="border:none;margin:0"><table><thead><tr><th>Bộ môn</th><th class="r">Còn 2</th><th class="r">Còn 1</th><th class="r">Nguy cơ</th><th class="r">Cấm thi</th><th class="r">Tổng</th></tr></thead><tbody>';
+  d.cb.forEach(function(r){
+    var t=r.con2+r.con1+r.nguycam+r.camthi;
+    html+='<tr><td>'+sn(r.bm)+'</td><td class="r">'+r.con2+'</td><td class="r">'+r.con1+'</td>';
+    html+='<td class="r">'+(r.nguycam?'<span class="ctag nguy">'+r.nguycam+'</span>':r.nguycam)+'</td>';
+    html+='<td class="r">'+(r.camthi?'<span class="ctag cam">'+r.camthi+'</span>':r.camthi)+'</td>';
+    html+='<td class="r"><strong>'+t+'</strong></td></tr>';
+  });
+  var ctot=d.cb.reduce(function(s,r){return{con2:s.con2+r.con2,con1:s.con1+r.con1,nguycam:s.nguycam+r.nguycam,camthi:s.camthi+r.camthi}},{con2:0,con1:0,nguycam:0,camthi:0});
+  html+='<tr class="tot"><td>Tổng cộng</td><td class="r">'+ctot.con2+'</td><td class="r">'+ctot.con1+'</td><td class="r">'+ctot.nguycam+'</td><td class="r"><strong style="color:#7c3aed">'+ctot.camthi+'</strong></td><td class="r"><strong>'+(ctot.con2+ctot.con1+ctot.nguycam+ctot.camthi)+'</strong></td></tr>';
+  html+='</tbody></table></div>';
+  html+='</div>'; // g2
+
+  // ── BẢNG 3: Khôi phục (cột lý do ĐỘNG theo header file) ──
+  if(d.kp.length>0&&d.kpHeaders.length>0){
+    html+='<div class="stitle">Bảng 3 · Khôi phục điểm danh</div>';
+    html+='<div class="g2">';
+    // Tổng theo từng lý do động
+    var kpT={};
+    d.kpHeaders.forEach(function(h){kpT[h]=0;});
+    d.kp.forEach(function(r){d.kpHeaders.forEach(function(h){kpT[h]+=(r.vals[h]||0);});});
+    var kpTotal=d.kpHeaders.reduce(function(s,h){return s+kpT[h];},0)||1;
+    var REASON_COLORS=['#3b82f6','#22c55e','#f59e0b','#ef4444','#8b5cf6','#f97316','#14b8a6','#ec4899'];
+    var maxKPval=Math.max.apply(null,d.kpHeaders.map(function(h){return kpT[h];}));
+    html+='<div class="card"><div class="ctitle">🔄 Lý do khôi phục ('+fmtN(kpTotal)+' TH)</div>';
+    // Strip tỷ lệ
+    html+='<div class="rstrip">';
+    d.kpHeaders.forEach(function(h,hi){var v=kpT[h];if(v>0)html+='<div class="rs" style="flex:'+v+';background:'+REASON_COLORS[hi%REASON_COLORS.length]+'">'+v+'</div>';});
+    html+='</div>';
+    // Bar chart lý do
+    d.kpHeaders.forEach(function(h,hi){
+      var v=kpT[h];if(!v)return;
+      var c=REASON_COLORS[hi%REASON_COLORS.length];
+      html+='<div class="bar-row"><div class="bar-meta"><span class="bar-name">'+h+'</span><span style="color:'+c+';font-weight:700">'+v+' ('+Math.round(v/kpTotal*100)+'%)</span></div>'
+        +'<div class="bar-track"><div class="bar-fill" style="width:'+Math.round(v/Math.max(maxKPval,1)*100)+'%;background:'+c+'"></div></div></div>';
+    });
+    html+='</div>';
+    // Bảng chi tiết kp — header động, scroll ngang, cố định cột Bộ môn
+    html+='<div class="twrap kp-scroll-wrap" style="border:none;margin:0;overflow-x:auto;-webkit-overflow-scrolling:touch;">';
+    html+='<table class="kp-table"><thead><tr><th class="kp-sticky-col">Bộ môn</th>';
+    d.kpHeaders.forEach(function(h){html+='<th class="r">'+h+'</th>';});
+    html+='<th class="r">Tổng</th></tr></thead><tbody>';
+    d.kp.forEach(function(r){
+      var t=d.kpHeaders.reduce(function(s,h){return s+(r.vals[h]||0);},0);
+      if(!t)return;
+      html+='<tr><td class="kp-sticky-col">'+sn(r.bm)+'</td>';
+      d.kpHeaders.forEach(function(h){html+='<td class="r">'+(r.vals[h]||0)+'</td>';});
+      html+='<td class="r"><strong>'+t+'</strong></td></tr>';
+    });
+    html+='<tr class="tot"><td class="kp-sticky-col">Grand Total</td>';
+    d.kpHeaders.forEach(function(h){html+='<td class="r">'+kpT[h]+'</td>';});
+    html+='<td class="r"><strong>'+kpTotal+'</strong></td></tr>';
+    html+='</tbody></table></div>';
+    html+='</div>'; // g2
+  }
+
+  // ── NHẬN XÉT & KẾ HOẠCH ──
+  html+=buildNhanXet(d,pd,wk,prev,totalVang,pTotalVang,totalCamThi,pCamThi,totalCon1,totalNguyCam);
+
+  html+='</div>'; // end panel
+  return html;
+}
+
+// ── NHẬN XÉT TỰ ĐỘNG ──
+function buildNhanXet(d,pd,wk,prev,totalVang,pTotalVang,totalCamThi,pCamThi,totalCon1,totalNguyCam){
+  var alerts=[],goods=[],watches=[],plans=[];
+
+  // Phân tích cảnh báo
+  var dCT=pCamThi!==null?totalCamThi-pCamThi:null;
+  if(dCT!==null&&dCT>20) alerts.push('Cấm thi tăng mạnh: <strong>'+fmtN(pCamThi)+'→'+fmtN(totalCamThi)+' (+'+fmtN(dCT)+')</strong> — cần xử lý ngay');
+
+  // BM vắng cao nhất
+  var topVang=d.vh.slice().sort(function(a,b){return b.tlvang-a.tlvang})[0];
+  if(topVang&&topVang.tlvang>0.18) alerts.push('<strong>'+sn(topVang.bm)+'</strong> vắng cao nhất: <strong>'+fmtP(topVang.tlvang)+'</strong> — vượt ngưỡng 18%');
+
+  // BM tăng vắng mạnh nhất
+  if(pd){
+    var pMap={};pd.vh.forEach(function(r){pMap[r.bm]=r.tlvang});
+    var biggest=null,biggestDiff=0;
+    d.vh.forEach(function(r){var diff=r.tlvang-(pMap[r.bm]||0);if(diff>biggestDiff){biggestDiff=diff;biggest=r}});
+    if(biggest&&biggestDiff>0.03) alerts.push('<strong>'+sn(biggest.bm)+'</strong> tăng vắng mạnh nhất: <strong>↑'+fmtP(biggestDiff)+'</strong> so '+prev.name);
+  }
+
+  // SV còn 1 buổi
+  if(totalCon1>100) watches.push(fmtN(totalCon1)+' SV còn 1 buổi nghỉ — nguy cơ cấm thi tuần tới rất cao');
+  else if(totalCon1>50) watches.push(fmtN(totalCon1)+' SV còn 1 buổi nghỉ — cần liên hệ nhắc nhở');
+  if(totalNguyCam>30) watches.push(fmtN(totalNguyCam)+' SV nguy cơ cấm thi — can thiệp trước khi bị cấm');
+
+  // Top cấm thi BM
+  var topCT=d.cb.slice().sort(function(a,b){return b.camthi-a.camthi}).filter(function(r){return r.camthi>0}).slice(0,2);
+  if(topCT.length) watches.push('Tập trung: '+topCT.map(function(r){return '<strong>'+sn(r.bm)+'</strong> ('+r.camthi+' CT)'}).join(', ')+' — họp BM để tìm nguyên nhân');
+
+  // Tích cực
+  if(pTotalVang!==null&&totalVang<pTotalVang) goods.push('Tổng lượt vắng giảm <strong>'+fmtN(pTotalVang-totalVang)+' lượt</strong> so '+prev.name);
+  if(pd){
+    var pMap2={};pd.vh.forEach(function(r){pMap2[r.bm]=r.tlvang});
+    var improved=d.vh.filter(function(r){return pMap2[r.bm]&&r.tlvang<pMap2[r.bm]-0.01});
+    if(improved.length) goods.push('BM cải thiện tốt: '+improved.map(function(r){return '<strong>'+sn(r.bm)+'</strong>'}).join(', '));
+  }
+  if(goods.length===0) goods.push('Đây là tuần đầu — chưa có dữ liệu so sánh');
+
+  // Kế hoạch
+  if(totalCon1>0) plans.push('Liên hệ <strong>'+fmtN(totalCon1)+' SV còn 1 buổi nghỉ</strong> — giao BM phụ trách trực tiếp');
+  if(topCT.length) plans.push('Họp khẩn BM <strong>'+topCT.map(function(r){return sn(r.bm)}).join(', ')+'</strong> về SV cấm thi');
+  if(totalNguyCam>0) plans.push('Rà soát <strong>'+fmtN(totalNguyCam)+' SV nguy cơ</strong> — can thiệp trước khi thành cấm thi');
+  plans.push('Cập nhật file Excel → tải lại app sau khi điền xong dữ liệu '+wk.name);
+
+  function block(cls,icon,title,items){
+    return '<div class="nxb '+cls+'"><h4>'+icon+' '+title+'</h4><ul class="nxlist">'+items.map(function(t){return'<li>'+t+'</li>'}).join('')+'</ul></div>';
+  }
+
+  return '<div class="stitle">Nhận xét & Kế hoạch</div>'
+    +'<div class="nxet"><div class="nxtitle">🧠 Phân tích tự động — '+wk.name+' ('+d.dateRange+')</div>'
+    +'<div class="nxgrid">'
+    +block('alert','🔴','Cần xử lý ngay',alerts.length?alerts:['Không có cảnh báo nghiêm trọng tuần này'])
+    +block('good','🟢','Tín hiệu tích cực',goods)
+    +block('warn','🟡','Cần theo dõi sát',watches.length?watches:['Tiếp tục duy trì và quan sát'])
+    +block('plan','🔵','Kế hoạch tuần tới',plans)
+    +'</div></div>';
+}
+
+// ── TREND PANEL ──
+function buildTrendPanel(weeks){
+  var html='<div id="panel-trend" class="week-panel"><div class="week-strip"><span class="ws-label" style="color:#7c3aed">📈 Xu hướng tổng</span><span class="ws-date">'+weeks[0].name+' → '+weeks[weeks.length-1].name+'</span></div>';
+
+  html+='<div class="stitle">Biến động qua các tuần</div>';
+  html+='<div class="trend-grid">';
+
+  // Tỷ lệ vắng
+  var maxTl=Math.max.apply(null,weeks.map(function(w){return w.data.vh.reduce(function(s,r){return s+r.vang},0)/Math.max(w.data.vh.reduce(function(s,r){return s+r.tong},0),1)}));
+  html+='<div class="tcard"><h3>📉 Tỷ lệ vắng tổng thể</h3><div class="sparkline">';
+  weeks.forEach(function(w,i){
+    var tv=w.data.vh.reduce(function(s,r){return s+r.vang},0);
+    var tt=w.data.vh.reduce(function(s,r){return s+r.tong},0);
+    var tl=tt?tv/tt:0;
+    var h=Math.max(Math.round(tl/Math.max(maxTl,0.01)*54),8);
+    html+='<div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex:1">';
+    html+='<div class="spark-bar" style="background:'+COLORS[i%COLORS.length]+';height:'+h+'px">'+fmtP(tl)+'</div>';
+    html+='<span class="spark-label">'+w.name+'</span></div>';
+  });
+  html+='</div></div>';
+
+  // Cấm thi
+  var maxCT=Math.max.apply(null,weeks.map(function(w){return w.data.cb.reduce(function(s,r){return s+r.camthi},0)}));
+  html+='<div class="tcard"><h3>🚨 SV cấm thi tích lũy</h3><div class="sparkline">';
+  weeks.forEach(function(w,i){
+    var ct=w.data.cb.reduce(function(s,r){return s+r.camthi},0);
+    var h=Math.max(Math.round(ct/Math.max(maxCT,1)*54),8);
+    html+='<div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex:1">';
+    html+='<div class="spark-bar" style="background:#7c3aed;height:'+h+'px">'+ct+'</div>';
+    html+='<span class="spark-label">'+w.name+'</span></div>';
+  });
+  html+='</div></div>';
+
+  // Khôi phục
+  var maxKP=Math.max.apply(null,weeks.map(function(w){return w.data.kp.reduce(function(s,r){return s+w.data.kpHeaders.reduce(function(sv,h){return sv+(r.vals[h]||0);},0);},0);}));
+  html+='<div class="tcard"><h3>🔄 Khôi phục điểm danh</h3><div class="sparkline">';
+  weeks.forEach(function(w,i){
+    var kp=w.data.kp.reduce(function(s,r){return s+w.data.kpHeaders.reduce(function(sv,h){return sv+(r.vals[h]||0);},0);},0);
+    var h=maxKP>0?Math.max(Math.round(kp/maxKP*54),8):8;
+    html+='<div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex:1">';
+    html+='<div class="spark-bar" style="background:#22c55e;height:'+h+'px">'+(kp||'—')+'</div>';
+    html+='<span class="spark-label">'+w.name+'</span></div>';
+  });
+  html+='</div></div>';
+  html+='</div>'; // trend-grid
+
+  // Bảng so sánh vắng theo tuần × BM
+  html+='<div class="stitle">Tỷ lệ vắng theo bộ môn qua các tuần</div>';
+  html+='<div class="twrap"><table><thead><tr><th>Bộ môn</th>';
+  weeks.forEach(function(w){html+='<th class="r">'+w.name+'</th>'});
+  html+='<th class="r">Xu hướng</th></tr></thead><tbody>';
+
+  var allBMs=weeks[weeks.length-1].data.vh.map(function(r){return r.bm});
+  allBMs.forEach(function(bm){
+    html+='<tr><td>'+sn(bm)+'</td>';
+    var tls=weeks.map(function(w){var r=w.data.vh.find(function(x){return x.bm===bm});return r?r.tlvang:null});
+    tls.forEach(function(tl){
+      html+='<td class="r">'+(tl!==null?'<span style="color:'+(tl>0.18?'#dc2626':tl>0.15?'#d97706':'#334155')+';font-weight:'+(tl>0.15?'700':'400')+'">'+fmtP(tl)+'</span>':'—')+'</td>';
+    });
+    // Xu hướng: so tuần đầu vs cuối
+    var first=tls.find(function(t){return t!==null});
+    var last=tls[tls.length-1];
+    var diff=first!==null&&last!==null?last-first:null;
+    html+='<td class="r">'+(diff!==null?'<span class="trend '+(diff>0.005?'up':diff<-0.005?'dn':'eq')+'">'+(diff>0?'↑+':'↓')+fmtP(Math.abs(diff))+'</span>':'—')+'</td>';
+    html+='</tr>';
+  });
+  html+='</tbody></table></div>';
+
+  html+='</div>'; // panel
+  return html;
+}
+</script>
+</body>
+</html>
